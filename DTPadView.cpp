@@ -336,19 +336,58 @@ void CDTPadView::OnSpeakDocument()
 	}
 }
 
+void CDTPadView::GetFullSelectedText(CString& outText)
+{
+    // Get the start and end points of the selection from the underlying edit control
+    int nStartChar, nEndChar;
+    GetEditCtrl().GetSel(nStartChar, nEndChar);
+
+    // Check if there is a selection
+    if (nStartChar != nEndChar)
+    {
+        // Get the length of the entire text
+        int nTextLen = GetWindowTextLength();
+
+        // Allocate buffer for the text (+1 for the null terminator)
+        char* pszText = new char[nTextLen + 1];
+
+        // Get the entire window text
+        GetWindowText(pszText, nTextLen + 1);
+
+        // Extract the selected text
+        pszText[nEndChar] = '\0'; // Ensure the string is terminated
+        outText = &pszText[nStartChar];
+
+        // Clean up
+        delete[] pszText;
+    }
+    else
+    {
+        // No selection, clear the output
+        outText.Empty();
+    }
+}
+
 void CDTPadView::OnSpeakSelected()
 {
-	CString text;
-	GetSelectedText(text);
-	if (engine)
-	{
-		if (paused)
-		{
-			TextToSpeechResume_func(engine);
-			paused = false;
-		}
-		TextToSpeechSpeak_func(engine, text.GetBuffer(0), TTS_FORCE);
-	}
+    CString text;
+    GetFullSelectedText(text);
+    
+    // Check if there's no selection and announce that fact instead of doing nothing
+    if (text.IsEmpty())
+    {
+        text = "Nothing was selected.";
+    }
+    
+    if (engine)
+    {
+        if (paused)
+        {
+            TextToSpeechResume_func(engine);
+            paused = false;
+        }
+        TextToSpeechSpeak_func(engine, text.GetBuffer(0), TTS_FORCE);
+    }
 }
 
 void CDTPadView::OnUpdateSpeak(CCmdUI* pCmdUI)

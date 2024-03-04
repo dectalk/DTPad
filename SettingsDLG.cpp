@@ -54,7 +54,7 @@ BOOL CSettingsDLG::OnInitDialog()
 	
 	// TODO: Add extra initialization here
 	
-	for (int i = 0; i < waveOutGetNumDevs(); i++)
+	for (UINT i = 0; i < waveOutGetNumDevs(); i++)
 	{
 		WAVEOUTCAPS waveoutcaps;
 		memset(&waveoutcaps, 0, sizeof(waveoutcaps));

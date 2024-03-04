@@ -23,6 +23,9 @@ protected: // create from serialization only
 public:
 	CDTPadDoc* GetDocument();
 
+    // New method for getting the full selected text
+    void GetFullSelectedText(CString& outText);
+
 // Operations
 public:
 
