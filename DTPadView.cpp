@@ -338,9 +338,12 @@ void CDTPadView::OnSpeakDocument()
 
 void CDTPadView::GetFullSelectedText(CString& outText)
 {
-    // Get the start and end points of the selection from the underlying edit control
+    // Get the start and end points of the selection
     int nStartChar, nEndChar;
     GetEditCtrl().GetSel(nStartChar, nEndChar);
+
+    // Initialize the pointer to null
+    char* pszText = NULL;
 
     // Check if there is a selection
     if (nStartChar != nEndChar)
@@ -349,7 +352,7 @@ void CDTPadView::GetFullSelectedText(CString& outText)
         int nTextLen = GetWindowTextLength();
 
         // Allocate buffer for the text (+1 for the null terminator)
-        char* pszText = new char[nTextLen + 1];
+        pszText = new char[nTextLen + 1];
 
         // Get the entire window text
         GetWindowText(pszText, nTextLen + 1);
