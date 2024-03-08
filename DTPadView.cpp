@@ -379,7 +379,7 @@ void CDTPadView::OnSpeakSelected()
     // Check if there's no selection and announce that fact instead of doing nothing
     if (text.IsEmpty())
     {
-        text = "Nothing was selected.";
+        text = "No selection.";
     }
     
     if (engine)
