@@ -641,9 +641,35 @@ void CDTPadView::OnUnloadDictionary()
 
 void CDTPadView::OnVersionInfo()
 {
-	char *versioninfo = NULL;
-	TextToSpeechVersion_func(&versioninfo);
-	MessageBox(versioninfo, "DECtalk Version Information", MB_ICONINFORMATION);
+	if (!dtlib)
+	{
+		MessageBox("No DECtalk DLL found.", "DECtalk Version Information", MB_ICONINFORMATION);
+		return;
+	}
+
+	ULONG version;
+	USHORT DECtalk_maj_ver, DECtalk_min_ver;
+	USHORT DECtalk_build;
+	LPSTR DECtalk_version;
+	const int bufferSize = 256;
+	char pString[bufferSize];
+	memset(pString, 0, sizeof(pString));
+
+	if (TextToSpeechVersion_func)
+	{
+		version = TextToSpeechVersion_func(&DECtalk_version);
+		DECtalk_maj_ver = (unsigned short) ((version & 0xFF000000) >> 24);
+		DECtalk_min_ver = (unsigned short) ((version & 0x00FF0000) >> 16);
+		DECtalk_build = (unsigned short) (version & 0x0000FFFF);
+		// Use _snprintf to prevent buffer overflow
+		_snprintf(pString, bufferSize - 1, "Synthesizer Version: %d.%02d (build %X)\nAPI/DLL Version: %s", DECtalk_maj_ver, DECtalk_min_ver, DECtalk_build, DECtalk_version);
+	}
+	else
+	{
+		strncpy(pString, "Version information not available", bufferSize);
+	}
+	// Display the version information
+	MessageBox(pString, "DECtalk Version Information", MB_ICONINFORMATION);
 }
 
 void CDTPadView::OnSpeakFaster()
