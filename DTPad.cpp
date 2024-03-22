@@ -17,6 +17,27 @@
 static char THIS_FILE[] = __FILE__;
 #endif
 
+// Gets the path to the settings file
+void GetSettingsFilePath(char* path, size_t pathSize) {
+    if (path == NULL || pathSize == 0) return;
+
+    GetModuleFileName(NULL, path, pathSize);
+    for (int i = strlen(path) - 1; i >= 0; i--) {
+        if (path[i] == '\\') {
+            path[i + 1] = '\0';  // Null-terminate the path at the last backslash
+            break;
+        }
+    }
+
+    // Check available space before concatenating
+    size_t remainingSize = pathSize - strlen(path) - 1;
+    if (remainingSize >= strlen("DTPad.ini")) {
+        strncat(path, "DTPad.ini", remainingSize);
+    } else {
+        // Handle error: not enough space
+    }
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // CDTPadApp
 
@@ -67,9 +88,20 @@ BOOL CDTPadApp::InitInstance()
 	// Change the registry key under which our settings are stored.
 	// TODO: You should modify this string to be something appropriate
 	// such as the name of your company or organization.
-	SetRegistryKey(_T("Datajake"));
+//	SetRegistryKey(_T("Datajake")); // Using ini file instead of registry
 
-	LoadStdProfileSettings();  // Load standard INI file options (including MRU)
+char iniPath[MAX_PATH];
+GetSettingsFilePath(iniPath, MAX_PATH);
+
+// Free the previously allocated string (if any)
+if (m_pszProfileName != NULL) {
+    free((void*)m_pszProfileName);
+}
+
+// Get the name of the .INI file
+m_pszProfileName = _tcsdup(_T(iniPath));
+
+LoadStdProfileSettings(10);  // Load standard INI file options (including MRU)
 
 	// Register the application's document templates.  Document templates
 	//  serve as the connection between documents, frame windows and views.

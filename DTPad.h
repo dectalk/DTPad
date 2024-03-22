@@ -13,6 +13,10 @@
 #endif
 
 #include "resource.h"       // main symbols
+#include <windows.h>
+#include <string.h>
+#include <Shlwapi.h>
+#include <io.h>
 
 /////////////////////////////////////////////////////////////////////////////
 // CDTPadApp:
@@ -46,5 +50,6 @@ public:
 
 //{{AFX_INSERT_LOCATION}}
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
+void GetSettingsFilePath(char* path, size_t pathSize);
 
 #endif // !defined(AFX_DTPAD_H__44B51CA5_A9CA_49AB_9B9F_52C342B70600__INCLUDED_)

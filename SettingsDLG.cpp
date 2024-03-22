@@ -5,6 +5,9 @@
 #include "DTPad.h"
 #include "SettingsDLG.h"
 
+//#include <windows.h>
+//#include <string.h>
+//#include <Shlwapi.h>
 #include <mmsystem.h>
 
 #ifdef _DEBUG
@@ -67,10 +70,10 @@ BOOL CSettingsDLG::OnInitDialog()
 	m_LogMode.AddString("Phonemes");
 	m_LogMode.AddString("Syllables");
 	m_LogMode.AddString("Text");
-	char filename[MAX_PATH];
-	memset(filename, 0, sizeof(filename));
-	SHGetSpecialFolderPath(NULL, filename, CSIDL_PERSONAL, FALSE);
-	strncat(filename, "\\DTPad.ini", MAX_PATH);
+    char filename[MAX_PATH];
+    GetModuleFileName(NULL, filename, MAX_PATH);
+    PathRemoveFileSpec(filename);
+    strncat(filename, "\\DTPad.ini", MAX_PATH - strlen(filename) - 1);
 	m_AudioDevice.SetCurSel(GetPrivateProfileInt("Settings", "AudioDevice", 0, filename));
 	m_OwnDevice.SetCheck(GetPrivateProfileInt("Settings", "OwnDevice", 0, filename));
 	m_AudioFormat.SetCurSel(GetPrivateProfileInt("Settings", "AudioFormat", 0, filename));
@@ -88,10 +91,10 @@ BOOL CSettingsDLG::OnInitDialog()
 
 void CSettingsDLG::OnOK() 
 {
-	char filename[MAX_PATH];
-	memset(filename, 0, sizeof(filename));
-	SHGetSpecialFolderPath(NULL, filename, CSIDL_PERSONAL, FALSE);
-	strncat(filename, "\\DTPad.ini", MAX_PATH);
+    char filename[MAX_PATH];
+    GetModuleFileName(NULL, filename, MAX_PATH);
+    PathRemoveFileSpec(filename);
+    strncat(filename, "\\DTPad.ini", MAX_PATH - strlen(filename) - 1);
 	char str[MAX_PATH];
 	memset(str, 0, sizeof(str));
 	sprintf(str, "%d", m_AudioDevice.GetCurSel());

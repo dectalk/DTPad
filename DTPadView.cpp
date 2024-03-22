@@ -13,6 +13,7 @@
 #define new DEBUG_NEW
 #undef THIS_FILE
 static char THIS_FILE[] = __FILE__;
+#include <stdio.h>
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
@@ -100,45 +101,70 @@ CDTPadView::CDTPadView()
 	pcmfile = NULL;
 	paused = false;
 
-	char filename[MAX_PATH];
-	memset(filename, 0, sizeof(filename));
-	SHGetSpecialFolderPath(NULL, filename, CSIDL_PERSONAL, FALSE);
-	strncat(filename, "\\DTPad.ini", MAX_PATH);
-	char curdir[MAX_PATH];
-	memset(curdir, 0, sizeof(curdir));
-	GetCurrentDirectory(MAX_PATH, curdir);
-	char libdir[MAX_PATH];
-	memset(libdir, 0, sizeof(libdir));
-	GetPrivateProfileString("Settings", "DLLDir", curdir, libdir, MAX_PATH, filename);
-	char libname[MAX_PATH];
-	memset(libname, 0, sizeof(libname));
-	GetPrivateProfileString("Settings", "DECtalkDLL", "dectalk.dll", libname, MAX_PATH, filename);
-	SetCurrentDirectory(libdir);
-	if (!LoadDECtalkDLL(libname))
-	{
-		if (MessageBox("No DECtalk DLL found! Would you like to load one now?", "Error", MB_ICONQUESTION | MB_YESNO) == IDYES)
-		{
-			TCHAR szFilters[] = "DLL Files (*.DLL)|*.DLL|All Files (*.*)|*.*||";
-			CFileDialog fileDialog(TRUE, "DLL", "*.DLL", OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, szFilters);
-			fileDialog.m_ofn.lpstrTitle = "Select Default DECtalk DLL";
-			if (fileDialog.DoModal() == IDOK)
-			{
-				CString pathName = fileDialog.GetPathName();
-				if (!LoadDECtalkDLL(pathName.GetBuffer(0)))
-				{
-					char msg[MAX_PATH];
-					sprintf(msg, "Failed to open %s!", pathName.GetBuffer(0));
-					MessageBox(msg, "Error", MB_ICONERROR);
-					return;
-				}
-				memset(curdir, 0, sizeof(curdir));
-				GetCurrentDirectory(MAX_PATH, curdir);
-				WritePrivateProfileString("Settings", "DECtalkDLL", pathName.GetBuffer(0), filename);
-				WritePrivateProfileString("Settings", "DLLDir", curdir, filename);
-			}
-		}
-	}
+    // Paths for ini and DLL
+    char iniPath[MAX_PATH], exePath[MAX_PATH], libdir[MAX_PATH], libname[MAX_PATH];
 
+// Get the executable path
+GetModuleFileName(NULL, exePath, MAX_PATH);
+CString exeDir = exePath;
+exeDir = exeDir.Left(exeDir.ReverseFind('\\'));
+
+// Check if settings file exists and get the path
+GetSettingsFilePath(iniPath, MAX_PATH); // Get the path to DTPad.ini
+bool settingsFileExists = (_access(iniPath, 0) != -1);
+
+// Try loading DLL based on settings file if it exists
+if(settingsFileExists) {
+    GetPrivateProfileString("Settings", "DLLDir", "", libdir, MAX_PATH, iniPath);
+    GetPrivateProfileString("Settings", "DECtalkDLL", "", libname, MAX_PATH, iniPath);
+}
+
+CString dllPath;
+bool dllLoaded = false;
+
+// Try loading the DLL from the settings path
+if (settingsFileExists && strlen(libdir) > 0 && strlen(libname) > 0) {
+    dllPath = CString(libdir) + "\\" + CString(libname);
+    SetCurrentDirectory(libdir); // Set working directory to the DLL's directory
+    dllLoaded = LoadDECtalkDLL(dllPath.GetBuffer(0));
+}
+
+// If the first attempt failed, try loading from the executable's path
+if (!dllLoaded) {
+    dllPath = exeDir + "\\dectalk.dll";
+    SetCurrentDirectory(exeDir); // Set working directory to the executable's directory
+    dllLoaded = LoadDECtalkDLL(dllPath.GetBuffer(0));
+}
+
+// If both attempts failed, prompt the user to select the DLL
+if (!dllLoaded) {
+        if (MessageBox("No DECtalk DLL found! Would you like to load one now?", "Error", MB_ICONQUESTION | MB_YESNO) == IDYES) {
+            TCHAR szFilters[] = "DLL Files (*.DLL)|*.DLL|All Files (*.*)|*.*||";
+            CFileDialog fileDialog(TRUE, "DLL", "*.DLL", OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, szFilters);
+            fileDialog.m_ofn.lpstrTitle = "Select Default DECtalk DLL";
+            if (fileDialog.DoModal() == IDOK) {
+                CString fullPathName = fileDialog.GetPathName();
+                if (!LoadDECtalkDLL(fullPathName.GetBuffer(0))) {
+                    char msg[MAX_PATH];
+                    sprintf(msg, "Failed to open %s!", fullPathName.GetBuffer(0));
+                    MessageBox(msg, "Error", MB_ICONERROR);
+                    return;
+                }
+
+                // Extract the directory and filename
+                CString directory, fileName;
+                int lastSlashIndex = fullPathName.ReverseFind('\\');
+                if (lastSlashIndex != -1) {
+                    directory = fullPathName.Left(lastSlashIndex);
+                    fileName = fullPathName.Mid(lastSlashIndex + 1);
+                }
+
+                // Update the ini file
+                WritePrivateProfileString("Settings", "DECtalkDLL", fileName.GetBuffer(0), iniPath);
+                WritePrivateProfileString("Settings", "DLLDir", directory.GetBuffer(0), iniPath);
+            }
+        }
+    }
 }
 
 CDTPadView::~CDTPadView()
@@ -292,20 +318,28 @@ bool CDTPadView::LoadDECtalkDLL(LPSTR libname)
 	TextToSpeechGetCaps_func(&caps);
 	DWORD device = WAVE_MAPPER;
 	DWORD flags = 0;
-	char filename[MAX_PATH];
-	memset(filename, 0, sizeof(filename));
-	SHGetSpecialFolderPath(NULL, filename, CSIDL_PERSONAL, FALSE);
-	strncat(filename, "\\DTPad.ini", MAX_PATH);
+    char filename[MAX_PATH];
+    GetSettingsFilePath(filename, MAX_PATH); // Get the complete path to DTPad.ini
 	device = GetPrivateProfileInt("Settings", "AudioDevice", 0, filename);
 	if (GetPrivateProfileInt("Settings", "OwnDevice", 0, filename))
 	{
 		flags = OWN_AUDIO_DEVICE;
 	}
-	if (TextToSpeechStartupEx_func(&engine, device, flags, callback, (LONG)this))
+	MMRESULT EngineError = TextToSpeechStartupEx_func(&engine, device, flags, callback, (LONG)this);
+	if (EngineError)
 	{
-		if (TextToSpeechStartupEx_func(&engine, WAVE_MAPPER, flags, callback, (LONG)this))
+		char msg[MAX_PATH];
+		memset(msg, 0, sizeof(msg));
+		sprintf(msg, "Failed to initialize DECtalk! Error code: %d.", EngineError);
+		MessageBox(msg, "Error", MB_ICONERROR);
+		if (EngineError == MMSYSERR_INVALPARAM)
 		{
-			return false;
+			EngineError = TextToSpeechStartupEx_func(&engine, device, flags, callback, (LONG)this);
+			if (EngineError)
+			{
+				sprintf(msg, "Failed to initialize DECtalk! Error code: %d.", EngineError);
+				MessageBox(msg, "Error", MB_ICONERROR);
+			}
 		}
 	}
 	BufferMessage = RegisterWindowMessage("DECtalkBufferMessage");
@@ -316,6 +350,14 @@ bool CDTPadView::LoadDECtalkDLL(LPSTR libname)
 		char msg[MAX_PATH];
 		memset(msg, 0, sizeof(msg));
 		GetPrivateProfileString("Settings", "StartupMessage", "Welcome to DTPad!", msg, MAX_PATH, filename);
+        #ifdef _DEBUG
+FILE* logFile = fopen("debug_log.txt", "a"); // Append mode
+if(logFile != NULL) {
+    fprintf(logFile, "Startup message: %s\n", msg);
+    fprintf(logFile, "Filename: %s\n", filename);
+    fclose(logFile);
+}
+#endif
 		TextToSpeechSpeak_func(engine, msg, TTS_FORCE);
 	}
 	return true;
@@ -454,10 +496,8 @@ void CDTPadView::OnCreateWAV()
 		{
 			TextToSpeechReset_func(engine, TRUE);
 			DWORD AudioFormat = WAVE_FORMAT_1M16;
-			char filename[MAX_PATH];
-			memset(filename, 0, sizeof(filename));
-			SHGetSpecialFolderPath(NULL, filename, CSIDL_PERSONAL, FALSE);
-			strncat(filename, "\\DTPad.ini", MAX_PATH);
+        char filename[MAX_PATH];
+        GetSettingsFilePath(filename, MAX_PATH); // Get the complete path to DTPad.ini
 			switch(GetPrivateProfileInt("Settings", "AudioFormat", 0, filename))
 			{
 			case 0:
@@ -509,10 +549,8 @@ void CDTPadView::OnCreateRaw()
 		{
 			TextToSpeechReset_func(engine, TRUE);
 			DWORD AudioFormat = WAVE_FORMAT_1M16;
-			char filename[MAX_PATH];
-			memset(filename, 0, sizeof(filename));
-			SHGetSpecialFolderPath(NULL, filename, CSIDL_PERSONAL, FALSE);
-			strncat(filename, "\\DTPad.ini", MAX_PATH);
+            char filename[MAX_PATH];
+            GetSettingsFilePath(filename, MAX_PATH); // Get the complete path to DTPad.ini
 			switch(GetPrivateProfileInt("Settings", "AudioFormat", 0, filename))
 			{
 			case 0:
@@ -565,10 +603,8 @@ void CDTPadView::OnCreateLog()
 		{
 			TextToSpeechReset_func(engine, TRUE);
 			DWORD LogMode = LOG_PHONEMES;
-			char filename[MAX_PATH];
-			memset(filename, 0, sizeof(filename));
-			SHGetSpecialFolderPath(NULL, filename, CSIDL_PERSONAL, FALSE);
-			strncat(filename, "\\DTPad.ini", MAX_PATH);
+            char filename[MAX_PATH];
+            GetSettingsFilePath(filename, MAX_PATH); // Get the complete path to DTPad.ini
 			switch(GetPrivateProfileInt("Settings", "LogMode", 0, filename))
 			{
 			case 0:
