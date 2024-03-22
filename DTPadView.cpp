@@ -334,7 +334,7 @@ bool CDTPadView::LoadDECtalkDLL(LPSTR libname)
 		MessageBox(msg, "Error", MB_ICONERROR);
 		if (EngineError == MMSYSERR_INVALPARAM)
 		{
-			EngineError = TextToSpeechStartupEx_func(&engine, device, flags, callback, (LONG)this);
+			EngineError = TextToSpeechStartupEx_func(&engine, WAVE_MAPPER, flags, callback, (LONG)this);
 			if (EngineError)
 			{
 				sprintf(msg, "Failed to initialize DECtalk! Error code: %d.", EngineError);
