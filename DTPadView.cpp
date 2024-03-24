@@ -328,12 +328,16 @@ bool CDTPadView::LoadDECtalkDLL(LPSTR libname)
 	MMRESULT EngineError = TextToSpeechStartupEx_func(&engine, device, flags, callback, (LONG)this);
 	if (EngineError)
 	{
-		char msg[MAX_PATH];
+		char msg[MAX_PATH*2];
 		memset(msg, 0, sizeof(msg));
-		sprintf(msg, "Failed to initialize DECtalk! Error code: %d.", EngineError);
+		sprintf(msg, "Failed to initialize DECtalk using the audio output device specified in DTPad's settings! Error code: %d. We will now attempt to initialize DECtalk using the system's default audio output device. If successful, no further messages will be displayed.", EngineError);
 		MessageBox(msg, "Error", MB_ICONERROR);
-		if (EngineError == MMSYSERR_INVALPARAM)
+		EngineError = TextToSpeechStartupEx_func(&engine, WAVE_MAPPER, flags, callback, (LONG)this);
+		if (EngineError)
 		{
+			sprintf(msg, "Failed to initialize DECtalk using the default audio output device! Error code: %d. We will now attempt to initialize DECtalk with no audio output. If successful, no further messages will be displayed. If you wish to receive output, please use either the 'Create WAV', 'Create Raw', or 'Create Log' options from the 'Speech' menu to save your output for later use.", EngineError);
+			MessageBox(msg, "Error", MB_ICONERROR);
+			flags |= DO_NOT_USE_AUDIO_DEVICE;
 			EngineError = TextToSpeechStartupEx_func(&engine, WAVE_MAPPER, flags, callback, (LONG)this);
 			if (EngineError)
 			{
