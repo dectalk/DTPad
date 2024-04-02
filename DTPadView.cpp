@@ -526,7 +526,7 @@ void CDTPadView::OnCreateWAV()
 			TextToSpeechCloseWaveOutFile_func(engine);
 			TextToSpeechReset_func(engine, TRUE);
 			char msg[MAX_PATH];
-			sprintf(msg, "%s successfully created!", pathName.GetBuffer(0));
+			sprintf(msg, "Successfully created WAV file at %s.", pathName.GetBuffer(0));
 			MessageBox(msg, "Information", MB_ICONINFORMATION);
 		}
 	}
@@ -576,7 +576,7 @@ void CDTPadView::OnCreateRaw()
 			fclose(pcmfile);
 			pcmfile = NULL;
 			char msg[MAX_PATH];
-			sprintf(msg, "%s successfully created!", pathName.GetBuffer(0));
+			sprintf(msg, "Successfully created raw file at %s.", pathName.GetBuffer(0));
 			MessageBox(msg, "Information", MB_ICONINFORMATION);
 		}
 	}
@@ -633,7 +633,7 @@ void CDTPadView::OnCreateLog()
 			TextToSpeechCloseLogFile_func(engine);
 			TextToSpeechReset_func(engine, TRUE);
 			char msg[MAX_PATH];
-			sprintf(msg, "%s successfully created!", pathName.GetBuffer(0));
+			sprintf(msg, "Successfully created log file at %s.", pathName.GetBuffer(0));
 			MessageBox(msg, "Information", MB_ICONINFORMATION);
 		}
 	}

@@ -264,7 +264,7 @@ CAPTION "About DTPad"
 FONT 8, "MS Sans Serif"
 BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,11,17,20,20
-    LTEXT           "DTPad Version 1.0",IDC_STATIC,40,10,119,8,SS_NOPREFIX
+    LTEXT           "DTPad Version 1.2",IDC_STATIC,40,10,119,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 2023-2024",IDC_STATIC,40,25,119,8
     DEFPUSHBUTTON   "OK",IDOK,178,7,50,14,WS_GROUP
 END
@@ -296,8 +296,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,1
- PRODUCTVERSION 1,0,0,1
+ FILEVERSION 1,2,0,0
+ PRODUCTVERSION 1,2,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -314,13 +314,13 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Datajake\0"
             VALUE "FileDescription", "DTPad MFC Application\0"
-            VALUE "FileVersion", "1, 0, 0, 1\0"
+            VALUE "FileVersion", "1, 2, 0, 0\0"
             VALUE "InternalName", "DTPad\0"
-            VALUE "LegalCopyright", "Copyright (C) 2023\0"
+            VALUE "LegalCopyright", "Copyright (C) 2023-2024\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "DTPad.EXE\0"
             VALUE "ProductName", "DTPad Application\0"
-            VALUE "ProductVersion", "1, 0, 0, 1\0"
+            VALUE "ProductVersion", "1, 2, 0, 0\0"
         END
     END
     BLOCK "VarFileInfo"
